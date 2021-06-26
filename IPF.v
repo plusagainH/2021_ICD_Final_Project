@@ -24,11 +24,9 @@ reg [7:0] din_r, din_w;
 reg [1:0] ipf_type_r, ipf_type_w;
 reg [4:0] ipf_band_pos_r, ipf_band_pos_w;
 reg ipf_wo_class_r, ipf_wo_class_w;
+reg[15:0] ipf_offset_w;
 //split ipf_offset to different remainder
-reg signed[3:0] ipf_offset_0_r, ipf_offset_0_w;
-reg signed[3:0] ipf_offset_1_r, ipf_offset_1_w;
-reg signed[3:0] ipf_offset_2_r, ipf_offset_2_w;
-reg signed[3:0] ipf_offset_3_r, ipf_offset_3_w;
+reg signed[3:0] ipf_offset_0_r, ipf_offset_1_r, ipf_offset_2_r, ipf_offset_3_r;
 reg [2:0]  lcu_x_r, lcu_x_w;
 reg [2:0]  lcu_y_r, lcu_y_w;
 reg [1:0]  lcu_size_r, lcu_size_w;
@@ -43,7 +41,6 @@ reg signed[8:0] pixel_memory_w[0:191]; //64*3 8-bits memory
 
 reg [5:0] row_r, row_w;//present cal pixel coordinate
 reg [5:0] col_r, col_w;//present cal pixel coordinate
-reg [13:0] din_num_r, din_num_w;//record how many din's have been imported
 
 //Outputs
 assign busy = busy_r;
@@ -566,9 +563,9 @@ always @(posedge clk or posedge rst) begin
         ipf_band_pos_r <= 5'b0;
         ipf_wo_class_r <= 1'b0;
         ipf_offset_0_r <= 4'b0;//split ipf_offset to different remainder
-		ipf_offset_1_r <= 4'b0;
-		ipf_offset_2_r <= 4'b0;
-		ipf_offset_3_r <= 4'b0;
+	ipf_offset_1_r <= 4'b0;
+	ipf_offset_2_r <= 4'b0;
+	ipf_offset_3_r <= 4'b0;
         lcu_x_r <= 3'b0;
         lcu_y_r <= 3'b0;
         lcu_size_r <= 2'b0;
@@ -579,9 +576,8 @@ always @(posedge clk or posedge rst) begin
         dout_addr_r <= 14'b0;
         state_r <= 2'b0;
         pixel_memory_r <= '{default:0};
-		row_r <= 2'b0;
-		col_r <= 2'b0;
-		din_num_r <= 14'b0;
+	row_r <= 2'b0;
+	col_r <= 2'b0;
     end
     else begin
         din_r <= din_w;
@@ -589,10 +585,10 @@ always @(posedge clk or posedge rst) begin
         ipf_band_pos_r <= ipf_band_pos_w;
         ipf_wo_class_r <= ipf_wo_class_w;
         ipf_offset_r <= ipf_offset_w;
-		ipf_offset_0_r <= ipf_offset_w[15:12];//split ipf_offset to different remainder
-		ipf_offset_1_r <= ipf_offset_w[11:8];
-		ipf_offset_2_r <= ipf_offset_w[7:4];
-		ipf_offset_3_r <= ipf_offset_w[3:0];
+	ipf_offset_0_r <= ipf_offset_w[15:12];//split ipf_offset to different remainder
+	ipf_offset_1_r <= ipf_offset_w[11:8];
+	ipf_offset_2_r <= ipf_offset_w[7:4];
+	ipf_offset_3_r <= ipf_offset_w[3:0];
         lcu_x_r <= lcu_x_w;
         lcu_y_r <= lcu_y_w;
         lcu_size_r <= lcu_size_w;
@@ -603,9 +599,8 @@ always @(posedge clk or posedge rst) begin
         dout_addr_r <= dout_addr_w;
         state_r <= state_w;
         pixel_memory_r <= pixel_memory_w;
-		row_r <= row_w;
-		col_r <= col_w;
-		din_num_r <= din_num_w;
+	row_r <= row_w;
+	col_r <= col_w;
     end
 end
      
