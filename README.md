@@ -4,8 +4,9 @@
 2. 另外，如果直接寫x+y>255或x+y<0會有overflow發生，所以我換了一點寫法。
 3. 另外，我把WO改成不同大小lcu_size都適用，這樣就不用重複寫好幾次，浪費硬體
 4. PO是用每一個pixel的值來判斷Band idx，應該不是用pixel所在的位置。另外，要考慮ipf_band_pos是0和31的情況，助教之前有寄信說如果0的話就0、1兩個band維持不動；如果是31，就30,31兩個band維持不動
-5. ipf_offset如果分成四個，也要有ipf_offset_0_w, ipf_offset_1_w, ipf_offset_2_w, ipf_offset_3_w來更新ipf_offset_0_r, ipf_offset_1_r, ipf_offset_2_r, ipf_offset_3_r。所以應該直接用ipf_offset[15:12], ipf_offset[11:8], …就好了
+5. ipf_offset_0_r, ipf_offset_1_r, ipf_offset_2_r, ipf_offset_3_r似乎直接用ipf_offset[15:12], ipf_offset[11:8], …就好了
 6. 我加了mem_pos來表示現在的運算是在memory的哪個位置
+7. 目前剩PO還有READ需要修改
 
  
 
