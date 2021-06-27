@@ -41,6 +41,10 @@ reg signed[7:0] pixel_memory_w[0:191]; //64*3 8-bits memory
 
 reg [5:0] row_r, row_w;//present cal pixel coordinate
 reg [5:0] col_r, col_w;//present cal pixel coordinate
+//parameter SIXTEEN 	= 5'd16;
+//parameter THIRTYTWO = 6'd32;
+//parameter SIXTYFOUR = 7'd64;
+
 
 //Outputs
 assign busy = busy_r;
@@ -285,7 +289,7 @@ always @(*) begin
 								0://horizontal
 									case(row_r)
 									0:begin//output 1st row
-										if(col_r==0 or col_r==15)//on left or right edge
+										if(col_r==0 or col_r==16-1)//on left or right edge
 											dout_w = pixel_memory_r[col_r];
 										 
 										else begin
@@ -335,7 +339,7 @@ always @(*) begin
 										
 									end	
 									15:begin//output 16th row
-										if(col_r==0 or col_r==15)//on left or right edge
+										if(col_r==0 or col_r==16-1)//on left or right edge
 											dout_w = pixel_memory_r[16*2+col_r];
 										 
 										else begin
@@ -387,7 +391,7 @@ always @(*) begin
 										
 									end	
 									default: begin//output current row
-										if(col_r==0 or col_r==15)//on left or right edge
+										if(col_r==0 or col_r==16-1)//on left or right edge
 											dout_w = pixel_memory_r[16*1+col_r];
 										 
 										else begin
@@ -492,12 +496,12 @@ always @(*) begin
 						end
 					endcase
 					//update the pixel index processed by coordinate(row, col)
-					if(col_r==15)begin
+					if(col_r==16-1)begin
 						col_w = 0;
-						if(row_r==15)
+						if(row_r==16-1)
 							row_w = 0;
 							//a LCU has finished
-							//states should be changed to READ, except all LCUs have been output
+							//states should be changed to READ, except all LCUs have been output(changed to FINISH)
 						else
 							row_w = row_r+1;
 							//a row has finished
@@ -509,30 +513,800 @@ always @(*) begin
 					end
 				end
 				1: begin//32x32
+					//dout_addr calculation
+					dout_addr_w = 128*row_r+col_r+lcu_x_r*128*32+lcu_y_r*32;
+					//dout calculation
 					case(ipf_type_r)
 						0:begin//OFF
-						
+							case(row_r)
+								0://output 1st row
+									dout_w = pixel_memory_r[col_r];
+									
+								31://output 32th row
+									dout_w = pixel_memory_r[32*2+col_r];
+									
+								default: //output current row
+									dout_w = pixel_memory_r[32*1+col_r];
+									
+							endcase
+							
+
 						end
 						1:begin//PO
-						
+							case(row_r)
+								0:begin//output 1st row
+									if((32*row_r+col_r>=(ipf_band_pos_r-1)*8) or (32*row_r+col_r<=((ipf_band_pos_r+1)*8-1)))//if current pixel falls into no-operation bands
+										dout_w = pixel_memory_r[col_r];
+									else begin//PO operation
+										case(col_r[1:0])//ipf_offset for different offset
+											2'b00:begin
+												if(pixel_memory_r[col_r]+ipf_offset_0_r<0)
+													dout_w = 0;
+												else if(pixel_memory_r[col_r]+ipf_offset_0_r>255)
+													dout_w = 255;
+												else
+													dout_w = (pixel_memory_r[col_r]+ipf_offset_0_r);
+
+											end
+											2'b01:begin
+												if(pixel_memory_r[col_r]+ipf_offset_1_r<0)
+													dout_w = 0;
+												else if(pixel_memory_r[col_r]+ipf_offset_1_r>255)
+													dout_w = 255;
+												else
+													dout_w = (pixel_memory_r[col_r]+ipf_offset_1_r);
+
+											end
+											2'b10:begin
+												if(pixel_memory_r[col_r]+ipf_offset_2_r<0)
+													dout_w = 0;
+												else if(pixel_memory_r[col_r]+ipf_offset_2_r>255)
+													dout_w = 255;
+												else
+													dout_w = (pixel_memory_r[col_r]+ipf_offset_2_r);
+
+											end
+											2'b11:begin
+												if(pixel_memory_r[col_r]+ipf_offset_3_r<0)
+													dout_w = 0;
+												else if(pixel_memory_r[col_r]+ipf_offset_3_r>255)
+													dout_w = 255;
+												else
+													dout_w = (pixel_memory_r[col_r]+ipf_offset_3_r);
+
+											end
+											
+										endcase
+										
+									end
+									
+								end	
+								31:begin//output 32th row
+									if((32*row_r+col_r>=(ipf_band_pos_r-1)*8) or (32*row_r+col_r<=((ipf_band_pos_r+1)*8-1)))//if current pixel falls into no-operation bands
+										dout_w = pixel_memory_r[col_r];
+									
+									else begin//PO operation
+										case(col_r[1:0])//ipf_offset for different offset
+											2'b00:begin
+												//dout calculation
+												if(pixel_memory_r[32*2+col_r]+ipf_offset_0_r<0)
+													dout_w = 0;
+												else if(pixel_memory_r[32*2+col_r]+ipf_offset_0_r>255)
+													dout_w = 255;
+												else
+													dout_w = (pixel_memory_r[32*2+col_r]+ipf_offset_0_r);
+											end
+											2'b01:begin
+												//dout calculation
+												if(pixel_memory_r[32*2+col_r]+ipf_offset_1_r<0)
+													dout_w = 0;
+												else if(pixel_memory_r[32*2+col_r]+ipf_offset_1_r>255)
+													dout_w = 255;
+												else
+													dout_w = (pixel_memory_r[32*2+col_r]+ipf_offset_1_r);
+											end
+											2'b10:begin
+												//dout calculation
+												if(pixel_memory_r[32*2+col_r]+ipf_offset_2_r<0)
+													dout_w = 0;
+												else if(pixel_memory_r[32*2+col_r]+ipf_offset_2_r>255)
+													dout_w = 255;
+												else
+													dout_w = (pixel_memory_r[32*2+col_r]+ipf_offset_2_r);
+											end
+											2'b11:begin
+												//dout calculation
+												if(pixel_memory_r[32*2+col_r]+ipf_offset_3_r<0)
+													dout_w = 0;
+												else if(pixel_memory_r[32*2+col_r]+ipf_offset_3_r>255)
+													dout_w = 255;
+												else
+													dout_w = (pixel_memory_r[32*2+col_r]+ipf_offset_3_r);
+											end
+											
+										endcase
+									end
+									
+
+									
+								end	
+								default: begin//output current row
+									if((32*row_r+col_r>=(ipf_band_pos_r-1)*8) or (32*row_r+col_r<=((ipf_band_pos_r+1)*8-1)))begin//if current pixel falls into no-operation bands
+										dout_w = pixel_memory_r[col_r];
+										dout_addr_w = 128*row_r+col_r+lcu_x_r*128*32+lcu_y_r*32;
+									end
+									else begin//PO operation
+										case(col_r[1:0])//ipf_offset for different offset
+											2'b00:begin
+												//dout calculation
+												if(pixel_memory_r[32*1+col_r]+ipf_offset_0_r<0)
+													dout_w = 0;
+												else if(pixel_memory_r[32*1+col_r]+ipf_offset_0_r>255)
+													dout_w = 255;
+												else
+													dout_w = (pixel_memory_r[32*1+col_r]+ipf_offset_0_r);
+											end
+											2'b01:begin
+												//dout calculation
+												if(pixel_memory_r[32*1+col_r]+ipf_offset_1_r<0)
+													dout_w = 0;
+												else if(pixel_memory_r[32*1+col_r]+ipf_offset_1_r>255)
+													dout_w = 255;
+												else
+													dout_w = (pixel_memory_r[32*1+col_r]+ipf_offset_1_r);
+											end
+											2'b10:begin
+												//dout calculation
+												if(pixel_memory_r[32*1+col_r]+ipf_offset_2_r<0)
+													dout_w = 0;
+												else if(pixel_memory_r[32*1+col_r]+ipf_offset_2_r>255)
+													dout_w = 255;
+												else
+													dout_w = (pixel_memory_r[32*1+col_r]+ipf_offset_2_r);
+											end
+											2'b11:begin
+												//dout calculation
+												if(pixel_memory_r[32*1+col_r]+ipf_offset_3_r<0)
+													dout_w = 0;
+												else if(pixel_memory_r[32*1+col_r]+ipf_offset_3_r>255)
+													dout_w = 255;
+												else
+													dout_w = (pixel_memory_r[32*1+col_r]+ipf_offset_3_r);
+											end
+											
+										endcase
+									end
+									
+
+									
+								end	
+							endcase
 						end
 						2:begin//WO
-						
+							case(ipf_wo_class_r)//2 classes of filter
+								0://horizontal
+									case(row_r)
+									0:begin//output 1st row
+										if(col_r==0 or col_r==32-1)//on left or right edge
+											dout_w = pixel_memory_r[col_r];
+										 
+										else begin
+											//five categories
+											//category 0
+											if((pixel_memory_r[col_r]<pixel_memory_r[col_r-1]) and (pixel_memory_r[col_r]<pixel_memory_r[col_r+1])) begin
+												if(pixel_memory_r[col_r]+ipf_offset_0_r<0)
+													dout_w = 0;
+												else if(pixel_memory_r[col_r]+ipf_offset_0_r>255)
+													dout_w = 255;
+												else
+													dout_w = (pixel_memory_r[col_r]+ipf_offset_0_r);
+											end
+											//category 3
+											else if((pixel_memory_r[col_r]>pixel_memory_r[col_r-1]) and (pixel_memory_r[col_r]>pixel_memory_r[col_r+1])) begin
+												if(pixel_memory_r[col_r]+ipf_offset_3_r<0)
+													dout_w = 0;
+												else if(pixel_memory_r[col_r]+ipf_offset_3_r>255)
+													dout_w = 255;
+												else
+													dout_w = (pixel_memory_r[col_r]+ipf_offset_3_r);
+											end
+											//category 1
+											else if(2*pixel_memory_r[col_r]<pixel_memory_r[col_r-1]+pixel_memory_r[col_r+1]) begin
+												if(pixel_memory_r[col_r]+ipf_offset_1_r<0)
+													dout_w = 0;
+												else if(pixel_memory_r[col_r]+ipf_offset_1_r>255)
+													dout_w = 255;
+												else
+													dout_w = (pixel_memory_r[col_r]+ipf_offset_1_r);
+											end
+											//category 2
+											else if(2*pixel_memory_r[col_r]>pixel_memory_r[col_r-1]+pixel_memory_r[col_r+1]) begin
+												if(pixel_memory_r[col_r]+ipf_offset_2_r<0)
+													dout_w = 0;
+												else if(pixel_memory_r[col_r]+ipf_offset_2_r>255)
+													dout_w = 255;
+												else
+													dout_w = (pixel_memory_r[col_r]+ipf_offset_2_r);
+											end
+											//category 4
+											else begin
+												dout_w = pixel_memory_r[col_r];
+											end
+
+										end
+										
+									end	
+									31:begin//output 32th row
+										if(col_r==0 or col_r==32-1)//on left or right edge
+											dout_w = pixel_memory_r[32*2+col_r];
+										 
+										else begin
+											//five categories
+											//category 0
+											if((pixel_memory_r[32*2+col_r]<pixel_memory_r[32*2+col_r-1]) and (pixel_memory_r[32*2+col_r]<pixel_memory_r[32*2+col_r+1])) begin
+												if(pixel_memory_r[32*2+col_r]+ipf_offset_0_r<0)
+													dout_w = 0;
+												else if(pixel_memory_r[32*2+col_r]+ipf_offset_0_r>255)
+													dout_w = 255;
+												else
+													dout_w = (pixel_memory_r[32*2+col_r]+ipf_offset_0_r);
+											end
+											//category 3
+											else if((pixel_memory_r[32*2+col_r]>pixel_memory_r[32*2+col_r-1]) and (pixel_memory_r[32*2+col_r]>pixel_memory_r[32*2+col_r+1])) begin
+												if(pixel_memory_r[32*2+col_r]+ipf_offset_3_r<0)
+													dout_w = 0;
+												else if(pixel_memory_r[32*2+col_r]+ipf_offset_3_r>255)
+													dout_w = 255;
+												else
+													dout_w = (pixel_memory_r[32*2+col_r]+ipf_offset_3_r);
+											end
+											//category 1
+											else if(2*pixel_memory_r[32*2+col_r]<pixel_memory_r[32*2+col_r-1]+pixel_memory_r[32*2+col_r+1]) begin
+												if(pixel_memory_r[32*2+col_r]+ipf_offset_1_r<0)
+													dout_w = 0;
+												else if(pixel_memory_r[32*2+col_r]+ipf_offset_1_r>255)
+													dout_w = 255;
+												else
+													dout_w = (pixel_memory_r[32*2+col_r]+ipf_offset_1_r);
+											end
+											//category 2
+											else if(2*pixel_memory_r[32*2+col_r]>pixel_memory_r[32*2+col_r-1]+pixel_memory_r[32*2+col_r+1]) begin
+												if(pixel_memory_r[32*2+col_r]+ipf_offset_2_r<0)
+													dout_w = 0;
+												else if(pixel_memory_r[32*2+col_r]+ipf_offset_2_r>255)
+													dout_w = 255;
+												else
+													dout_w = (pixel_memory_r[32*2+col_r]+ipf_offset_2_r);
+											end
+											//category 4
+											else begin
+												dout_w = pixel_memory_r[32*2+col_r];
+											end
+
+										end
+										
+
+										
+									end	
+									default: begin//output current row
+										if(col_r==0 or col_r==32-1)//on left or right edge
+											dout_w = pixel_memory_r[32*1+col_r];
+										 
+										else begin
+											//five categories
+											//category 0
+											if((pixel_memory_r[32*1+col_r]<pixel_memory_r[32*1+col_r-1]) and (pixel_memory_r[32*1+col_r]<pixel_memory_r[32*1+col_r+1])) begin
+												if(pixel_memory_r[32*1+col_r]+ipf_offset_0_r<0)
+													dout_w = 0;
+												else if(pixel_memory_r[32*1+col_r]+ipf_offset_0_r>255)
+													dout_w = 255;
+												else
+													dout_w = (pixel_memory_r[32*1+col_r]+ipf_offset_0_r);
+											end
+											//category 3
+											else if((pixel_memory_r[32*1+col_r]>pixel_memory_r[32*1+col_r-1]) and (pixel_memory_r[32*1+col_r]>pixel_memory_r[32*1+col_r+1])) begin
+												if(pixel_memory_r[32*1+col_r]+ipf_offset_3_r<0)
+													dout_w = 0;
+												else if(pixel_memory_r[32*1+col_r]+ipf_offset_3_r>255)
+													dout_w = 255;
+												else
+													dout_w = (pixel_memory_r[32*1+col_r]+ipf_offset_3_r);
+											end
+											//category 1
+											else if(2*pixel_memory_r[32*1+col_r]<pixel_memory_r[32*1+col_r-1]+pixel_memory_r[32*1+col_r+1]) begin
+												if(pixel_memory_r[32*1+col_r]+ipf_offset_1_r<0)
+													dout_w = 0;
+												else if(pixel_memory_r[32*1+col_r]+ipf_offset_1_r>255)
+													dout_w = 255;
+												else
+													dout_w = (pixel_memory_r[32*1+col_r]+ipf_offset_1_r);
+											end
+											//category 2
+											else if(2*pixel_memory_r[32*1+col_r]>pixel_memory_r[32*1+col_r-1]+pixel_memory_r[32*1+col_r+1]) begin
+												if(pixel_memory_r[32*1+col_r]+ipf_offset_2_r<0)
+													dout_w = 0;
+												else if(pixel_memory_r[32*1+col_r]+ipf_offset_2_r>255)
+													dout_w = 255;
+												else
+													dout_w = (pixel_memory_r[32*1+col_r]+ipf_offset_2_r);
+											end
+											//category 4
+											else 
+												dout_w = pixel_memory_r[32*1+col_r];
+
+										end
+										
+
+										
+									end	
+									endcase
+								1://vertical
+									case(row_r)
+									0://output 1st row
+										dout_w = pixel_memory_r[col_r];
+									31://output 32th row
+										dout_w = pixel_memory_r[32*2+col_r];
+									default: begin//output current row
+										//five categories
+										//category 0
+										if((pixel_memory_r[32*1+col_r]<pixel_memory_r[32*0+col_r]) and (pixel_memory_r[32*1+col_r]<pixel_memory_r[32*2+col_r])) begin
+											if(pixel_memory_r[32*1+col_r]+ipf_offset_0_r<0)
+												dout_w = 0;
+											else if(pixel_memory_r[32*1+col_r]+ipf_offset_0_r>255)
+												dout_w = 255;
+											else
+												dout_w = (pixel_memory_r[32*1+col_r]+ipf_offset_0_r);
+										end
+										//category 3
+										else if((pixel_memory_r[32*1+col_r]>pixel_memory_r[32*0+col_r]) and (pixel_memory_r[32*1+col_r]>pixel_memory_r[32*2+col_r])) begin
+											if(pixel_memory_r[32*1+col_r]+ipf_offset_3_r<0)
+												dout_w = 0;
+											else if(pixel_memory_r[32*1+col_r]+ipf_offset_3_r>255)
+												dout_w = 255;
+											else
+												dout_w = (pixel_memory_r[32*1+col_r]+ipf_offset_3_r);
+										end
+										//category 1
+										else if(2*pixel_memory_r[32*1+col_r]<pixel_memory_r[32*0+col_r]+pixel_memory_r[32*2+col_r]) begin
+											if(pixel_memory_r[32*1+col_r]+ipf_offset_1_r<0)
+												dout_w = 0;
+											else if(pixel_memory_r[32*1+col_r]+ipf_offset_1_r>255)
+												dout_w = 255;
+											else
+												dout_w = (pixel_memory_r[32*1+col_r]+ipf_offset_1_r);
+										end
+										//category 2
+										else if(2*pixel_memory_r[32*1+col_r]>pixel_memory_r[32*0+col_r]+pixel_memory_r[32*2+col_r]) begin
+											if(pixel_memory_r[32*1+col_r]+ipf_offset_2_r<0)
+												dout_w = 0;
+											else if(pixel_memory_r[32*1+col_r]+ipf_offset_2_r>255)
+												dout_w = 255;
+											else
+												dout_w = (pixel_memory_r[32*1+col_r]+ipf_offset_2_r);
+										end
+										//category 4
+										else begin
+											dout_w = pixel_memory_r[32*1+col_r];
+										end
+									end
+									endcase
+							endcase
 						end
 					endcase
+					//update the pixel index processed by coordinate(row, col)
+					if(col_r==32-1)begin
+						col_w = 0;
+						if(row_r==32-1)
+							row_w = 0;
+							//a LCU has finished
+							//states should be changed to READ, except all LCUs have been output
+						else
+							row_w = row_r+1;
+							//a row has finished
+							//states should be changed to READ, except row_r is 0(1st row) or 30(31th row)
+					end
+					else begin
+						col_w = col_w+1;
+						row_w = row_r;
+					end
 				end
 				2: begin//64x64
+					//dout_addr calculation
+					dout_addr_w = 128*row_r+col_r+lcu_x_r*128*64+lcu_y_r*64;
+					//dout calculation
 					case(ipf_type_r)
 						0:begin//OFF
-						
+							case(row_r)
+								0://output 1st row
+									dout_w = pixel_memory_r[col_r];
+									
+								63://output 64th row
+									dout_w = pixel_memory_r[64*2+col_r];
+									
+								default: //output current row
+									dout_w = pixel_memory_r[64*1+col_r];
+									
+							endcase
+							
+
 						end
 						1:begin//PO
-						
+							case(row_r)
+								0:begin//output 1st row
+									if((64*row_r+col_r>=(ipf_band_pos_r-1)*8) or (64*row_r+col_r<=((ipf_band_pos_r+1)*8-1)))//if current pixel falls into no-operation bands
+										dout_w = pixel_memory_r[col_r];
+									else begin//PO operation
+										case(col_r[1:0])//ipf_offset for different offset
+											2'b00:begin
+												if(pixel_memory_r[col_r]+ipf_offset_0_r<0)
+													dout_w = 0;
+												else if(pixel_memory_r[col_r]+ipf_offset_0_r>255)
+													dout_w = 255;
+												else
+													dout_w = (pixel_memory_r[col_r]+ipf_offset_0_r);
+
+											end
+											2'b01:begin
+												if(pixel_memory_r[col_r]+ipf_offset_1_r<0)
+													dout_w = 0;
+												else if(pixel_memory_r[col_r]+ipf_offset_1_r>255)
+													dout_w = 255;
+												else
+													dout_w = (pixel_memory_r[col_r]+ipf_offset_1_r);
+
+											end
+											2'b10:begin
+												if(pixel_memory_r[col_r]+ipf_offset_2_r<0)
+													dout_w = 0;
+												else if(pixel_memory_r[col_r]+ipf_offset_2_r>255)
+													dout_w = 255;
+												else
+													dout_w = (pixel_memory_r[col_r]+ipf_offset_2_r);
+
+											end
+											2'b11:begin
+												if(pixel_memory_r[col_r]+ipf_offset_3_r<0)
+													dout_w = 0;
+												else if(pixel_memory_r[col_r]+ipf_offset_3_r>255)
+													dout_w = 255;
+												else
+													dout_w = (pixel_memory_r[col_r]+ipf_offset_3_r);
+
+											end
+											
+										endcase
+										
+									end
+									
+								end	
+								63:begin//output 64th row
+									if((64*row_r+col_r>=(ipf_band_pos_r-1)*8) or (64*row_r+col_r<=((ipf_band_pos_r+1)*8-1)))//if current pixel falls into no-operation bands
+										dout_w = pixel_memory_r[col_r];
+									
+									else begin//PO operation
+										case(col_r[1:0])//ipf_offset for different offset
+											2'b00:begin
+												//dout calculation
+												if(pixel_memory_r[64*2+col_r]+ipf_offset_0_r<0)
+													dout_w = 0;
+												else if(pixel_memory_r[64*2+col_r]+ipf_offset_0_r>255)
+													dout_w = 255;
+												else
+													dout_w = (pixel_memory_r[64*2+col_r]+ipf_offset_0_r);
+											end
+											2'b01:begin
+												//dout calculation
+												if(pixel_memory_r[64*2+col_r]+ipf_offset_1_r<0)
+													dout_w = 0;
+												else if(pixel_memory_r[64*2+col_r]+ipf_offset_1_r>255)
+													dout_w = 255;
+												else
+													dout_w = (pixel_memory_r[64*2+col_r]+ipf_offset_1_r);
+											end
+											2'b10:begin
+												//dout calculation
+												if(pixel_memory_r[64*2+col_r]+ipf_offset_2_r<0)
+													dout_w = 0;
+												else if(pixel_memory_r[64*2+col_r]+ipf_offset_2_r>255)
+													dout_w = 255;
+												else
+													dout_w = (pixel_memory_r[64*2+col_r]+ipf_offset_2_r);
+											end
+											2'b11:begin
+												//dout calculation
+												if(pixel_memory_r[64*2+col_r]+ipf_offset_3_r<0)
+													dout_w = 0;
+												else if(pixel_memory_r[64*2+col_r]+ipf_offset_3_r>255)
+													dout_w = 255;
+												else
+													dout_w = (pixel_memory_r[64*2+col_r]+ipf_offset_3_r);
+											end
+											
+										endcase
+									end
+									
+
+									
+								end	
+								default: begin//output current row
+									if((64*row_r+col_r>=(ipf_band_pos_r-1)*8) or (64*row_r+col_r<=((ipf_band_pos_r+1)*8-1)))begin//if current pixel falls into no-operation bands
+										dout_w = pixel_memory_r[col_r];
+										dout_addr_w = 128*row_r+col_r+lcu_x_r*128*64+lcu_y_r*64;
+									end
+									else begin//PO operation
+										case(col_r[1:0])//ipf_offset for different offset
+											2'b00:begin
+												//dout calculation
+												if(pixel_memory_r[64*1+col_r]+ipf_offset_0_r<0)
+													dout_w = 0;
+												else if(pixel_memory_r[64*1+col_r]+ipf_offset_0_r>255)
+													dout_w = 255;
+												else
+													dout_w = (pixel_memory_r[64*1+col_r]+ipf_offset_0_r);
+											end
+											2'b01:begin
+												//dout calculation
+												if(pixel_memory_r[64*1+col_r]+ipf_offset_1_r<0)
+													dout_w = 0;
+												else if(pixel_memory_r[64*1+col_r]+ipf_offset_1_r>255)
+													dout_w = 255;
+												else
+													dout_w = (pixel_memory_r[64*1+col_r]+ipf_offset_1_r);
+											end
+											2'b10:begin
+												//dout calculation
+												if(pixel_memory_r[64*1+col_r]+ipf_offset_2_r<0)
+													dout_w = 0;
+												else if(pixel_memory_r[64*1+col_r]+ipf_offset_2_r>255)
+													dout_w = 255;
+												else
+													dout_w = (pixel_memory_r[64*1+col_r]+ipf_offset_2_r);
+											end
+											2'b11:begin
+												//dout calculation
+												if(pixel_memory_r[64*1+col_r]+ipf_offset_3_r<0)
+													dout_w = 0;
+												else if(pixel_memory_r[64*1+col_r]+ipf_offset_3_r>255)
+													dout_w = 255;
+												else
+													dout_w = (pixel_memory_r[64*1+col_r]+ipf_offset_3_r);
+											end
+											
+										endcase
+									end
+									
+
+									
+								end	
+							endcase
 						end
 						2:begin//WO
-						
+							case(ipf_wo_class_r)//2 classes of filter
+								0://horizontal
+									case(row_r)
+									0:begin//output 1st row
+										if(col_r==0 or col_r==64-1)//on left or right edge
+											dout_w = pixel_memory_r[col_r];
+										 
+										else begin
+											//five categories
+											//category 0
+											if((pixel_memory_r[col_r]<pixel_memory_r[col_r-1]) and (pixel_memory_r[col_r]<pixel_memory_r[col_r+1])) begin
+												if(pixel_memory_r[col_r]+ipf_offset_0_r<0)
+													dout_w = 0;
+												else if(pixel_memory_r[col_r]+ipf_offset_0_r>255)
+													dout_w = 255;
+												else
+													dout_w = (pixel_memory_r[col_r]+ipf_offset_0_r);
+											end
+											//category 3
+											else if((pixel_memory_r[col_r]>pixel_memory_r[col_r-1]) and (pixel_memory_r[col_r]>pixel_memory_r[col_r+1])) begin
+												if(pixel_memory_r[col_r]+ipf_offset_3_r<0)
+													dout_w = 0;
+												else if(pixel_memory_r[col_r]+ipf_offset_3_r>255)
+													dout_w = 255;
+												else
+													dout_w = (pixel_memory_r[col_r]+ipf_offset_3_r);
+											end
+											//category 1
+											else if(2*pixel_memory_r[col_r]<pixel_memory_r[col_r-1]+pixel_memory_r[col_r+1]) begin
+												if(pixel_memory_r[col_r]+ipf_offset_1_r<0)
+													dout_w = 0;
+												else if(pixel_memory_r[col_r]+ipf_offset_1_r>255)
+													dout_w = 255;
+												else
+													dout_w = (pixel_memory_r[col_r]+ipf_offset_1_r);
+											end
+											//category 2
+											else if(2*pixel_memory_r[col_r]>pixel_memory_r[col_r-1]+pixel_memory_r[col_r+1]) begin
+												if(pixel_memory_r[col_r]+ipf_offset_2_r<0)
+													dout_w = 0;
+												else if(pixel_memory_r[col_r]+ipf_offset_2_r>255)
+													dout_w = 255;
+												else
+													dout_w = (pixel_memory_r[col_r]+ipf_offset_2_r);
+											end
+											//category 4
+											else begin
+												dout_w = pixel_memory_r[col_r];
+											end
+
+										end
+										
+									end	
+									63:begin//output 64th row
+										if(col_r==0 or col_r==64-1)//on left or right edge
+											dout_w = pixel_memory_r[64*2+col_r];
+										 
+										else begin
+											//five categories
+											//category 0
+											if((pixel_memory_r[64*2+col_r]<pixel_memory_r[64*2+col_r-1]) and (pixel_memory_r[64*2+col_r]<pixel_memory_r[64*2+col_r+1])) begin
+												if(pixel_memory_r[64*2+col_r]+ipf_offset_0_r<0)
+													dout_w = 0;
+												else if(pixel_memory_r[64*2+col_r]+ipf_offset_0_r>255)
+													dout_w = 255;
+												else
+													dout_w = (pixel_memory_r[64*2+col_r]+ipf_offset_0_r);
+											end
+											//category 3
+											else if((pixel_memory_r[64*2+col_r]>pixel_memory_r[64*2+col_r-1]) and (pixel_memory_r[64*2+col_r]>pixel_memory_r[64*2+col_r+1])) begin
+												if(pixel_memory_r[64*2+col_r]+ipf_offset_3_r<0)
+													dout_w = 0;
+												else if(pixel_memory_r[64*2+col_r]+ipf_offset_3_r>255)
+													dout_w = 255;
+												else
+													dout_w = (pixel_memory_r[64*2+col_r]+ipf_offset_3_r);
+											end
+											//category 1
+											else if(2*pixel_memory_r[64*2+col_r]<pixel_memory_r[64*2+col_r-1]+pixel_memory_r[64*2+col_r+1]) begin
+												if(pixel_memory_r[64*2+col_r]+ipf_offset_1_r<0)
+													dout_w = 0;
+												else if(pixel_memory_r[64*2+col_r]+ipf_offset_1_r>255)
+													dout_w = 255;
+												else
+													dout_w = (pixel_memory_r[64*2+col_r]+ipf_offset_1_r);
+											end
+											//category 2
+											else if(2*pixel_memory_r[64*2+col_r]>pixel_memory_r[64*2+col_r-1]+pixel_memory_r[64*2+col_r+1]) begin
+												if(pixel_memory_r[64*2+col_r]+ipf_offset_2_r<0)
+													dout_w = 0;
+												else if(pixel_memory_r[64*2+col_r]+ipf_offset_2_r>255)
+													dout_w = 255;
+												else
+													dout_w = (pixel_memory_r[64*2+col_r]+ipf_offset_2_r);
+											end
+											//category 4
+											else begin
+												dout_w = pixel_memory_r[64*2+col_r];
+											end
+
+										end
+										
+
+										
+									end	
+									default: begin//output current row
+										if(col_r==0 or col_r==64-1)//on left or right edge
+											dout_w = pixel_memory_r[64*1+col_r];
+										 
+										else begin
+											//five categories
+											//category 0
+											if((pixel_memory_r[64*1+col_r]<pixel_memory_r[64*1+col_r-1]) and (pixel_memory_r[64*1+col_r]<pixel_memory_r[64*1+col_r+1])) begin
+												if(pixel_memory_r[64*1+col_r]+ipf_offset_0_r<0)
+													dout_w = 0;
+												else if(pixel_memory_r[64*1+col_r]+ipf_offset_0_r>255)
+													dout_w = 255;
+												else
+													dout_w = (pixel_memory_r[64*1+col_r]+ipf_offset_0_r);
+											end
+											//category 3
+											else if((pixel_memory_r[64*1+col_r]>pixel_memory_r[64*1+col_r-1]) and (pixel_memory_r[64*1+col_r]>pixel_memory_r[64*1+col_r+1])) begin
+												if(pixel_memory_r[64*1+col_r]+ipf_offset_3_r<0)
+													dout_w = 0;
+												else if(pixel_memory_r[64*1+col_r]+ipf_offset_3_r>255)
+													dout_w = 255;
+												else
+													dout_w = (pixel_memory_r[64*1+col_r]+ipf_offset_3_r);
+											end
+											//category 1
+											else if(2*pixel_memory_r[64*1+col_r]<pixel_memory_r[64*1+col_r-1]+pixel_memory_r[64*1+col_r+1]) begin
+												if(pixel_memory_r[64*1+col_r]+ipf_offset_1_r<0)
+													dout_w = 0;
+												else if(pixel_memory_r[64*1+col_r]+ipf_offset_1_r>255)
+													dout_w = 255;
+												else
+													dout_w = (pixel_memory_r[64*1+col_r]+ipf_offset_1_r);
+											end
+											//category 2
+											else if(2*pixel_memory_r[64*1+col_r]>pixel_memory_r[64*1+col_r-1]+pixel_memory_r[64*1+col_r+1]) begin
+												if(pixel_memory_r[64*1+col_r]+ipf_offset_2_r<0)
+													dout_w = 0;
+												else if(pixel_memory_r[64*1+col_r]+ipf_offset_2_r>255)
+													dout_w = 255;
+												else
+													dout_w = (pixel_memory_r[64*1+col_r]+ipf_offset_2_r);
+											end
+											//category 4
+											else 
+												dout_w = pixel_memory_r[64*1+col_r];
+
+										end
+										
+
+										
+									end	
+									endcase
+								1://vertical
+									case(row_r)
+									0://output 1st row
+										dout_w = pixel_memory_r[col_r];
+									63://output 64th row
+										dout_w = pixel_memory_r[64*2+col_r];
+									default: begin//output current row
+										//five categories
+										//category 0
+										if((pixel_memory_r[64*1+col_r]<pixel_memory_r[64*0+col_r]) and (pixel_memory_r[64*1+col_r]<pixel_memory_r[64*2+col_r])) begin
+											if(pixel_memory_r[64*1+col_r]+ipf_offset_0_r<0)
+												dout_w = 0;
+											else if(pixel_memory_r[64*1+col_r]+ipf_offset_0_r>255)
+												dout_w = 255;
+											else
+												dout_w = (pixel_memory_r[64*1+col_r]+ipf_offset_0_r);
+										end
+										//category 3
+										else if((pixel_memory_r[64*1+col_r]>pixel_memory_r[64*0+col_r]) and (pixel_memory_r[64*1+col_r]>pixel_memory_r[64*2+col_r])) begin
+											if(pixel_memory_r[64*1+col_r]+ipf_offset_3_r<0)
+												dout_w = 0;
+											else if(pixel_memory_r[64*1+col_r]+ipf_offset_3_r>255)
+												dout_w = 255;
+											else
+												dout_w = (pixel_memory_r[64*1+col_r]+ipf_offset_3_r);
+										end
+										//category 1
+										else if(2*pixel_memory_r[64*1+col_r]<pixel_memory_r[64*0+col_r]+pixel_memory_r[64*2+col_r]) begin
+											if(pixel_memory_r[64*1+col_r]+ipf_offset_1_r<0)
+												dout_w = 0;
+											else if(pixel_memory_r[64*1+col_r]+ipf_offset_1_r>255)
+												dout_w = 255;
+											else
+												dout_w = (pixel_memory_r[64*1+col_r]+ipf_offset_1_r);
+										end
+										//category 2
+										else if(2*pixel_memory_r[64*1+col_r]>pixel_memory_r[64*0+col_r]+pixel_memory_r[64*2+col_r]) begin
+											if(pixel_memory_r[64*1+col_r]+ipf_offset_2_r<0)
+												dout_w = 0;
+											else if(pixel_memory_r[64*1+col_r]+ipf_offset_2_r>255)
+												dout_w = 255;
+											else
+												dout_w = (pixel_memory_r[64*1+col_r]+ipf_offset_2_r);
+										end
+										//category 4
+										else begin
+											dout_w = pixel_memory_r[64*1+col_r];
+										end
+									end
+									endcase
+							endcase
 						end
 					endcase
+					//update the pixel index processed by coordinate(row, col)
+					if(col_r==64-1)begin
+						col_w = 0;
+						if(row_r==64-1)
+							row_w = 0;
+							//a LCU has finished
+							//states should be changed to READ, except all LCUs have been output
+						else
+							row_w = row_r+1;
+							//a row has finished
+							//states should be changed to READ, except row_r is 0(1st row) or 62(63th row)
+					end
+					else begin
+						col_w = col_w+1;
+						row_w = row_r;
+					end
 				end
 
 			endcase
@@ -540,7 +1314,7 @@ always @(*) begin
         FINISH: begin
             case(lcu_size_r)
 				0: begin//16x16
-
+					
 				end
 				1: begin//32x32
 		
