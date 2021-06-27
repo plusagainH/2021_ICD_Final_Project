@@ -36,8 +36,8 @@ reg out_en_r, out_en_w;
 reg [7:0] dout_r, dout_w;
 reg [13:0] dout_addr_r, dout_addr_w;
 reg [1:0] state_r, state_w;
-reg signed[8:0] pixel_memory_r[0:191]; //64*3 8-bits memory, MSB for signed, when calculating offset, both of the inputs must be signed to make the operation signed
-reg signed[8:0] pixel_memory_w[0:191]; //64*3 8-bits memory
+reg signed[7:0] pixel_memory_r[0:191]; //64*3 8-bits memory, when calculating offset, both of the inputs must be signed to make the operation signed
+reg signed[7:0] pixel_memory_w[0:191]; //64*3 8-bits memory
 
 reg [5:0] row_r, row_w;//present cal pixel coordinate
 reg [5:0] col_r, col_w;//present cal pixel coordinate
@@ -75,19 +75,19 @@ always @(*) begin
 					for (k=0; k<47; k=k+1)begin//16*3row
 						pixel_memory_w[k] = pixel_memory_r[k+1];
 					end
-					pixel_memory_w[47] = {0, din_r};
+					pixel_memory_w[47] = din_r;
 				end
 				1: begin//32x32
 					for (k=0; k<95; k=k+1)begin//32*3row
 						pixel_memory_w[k] = pixel_memory_r[k+1];
 					end
-					pixel_memory_w[95] = {0, din_r};
+					pixel_memory_w[95] = din_r;
 				end
 				2: begin//64x64
 					for (k=0; k<191; k=k+1)begin//64*3row
 						pixel_memory_w[k] = pixel_memory_r[k+1];
 					end
-					pixel_memory_w[191] = {0, din_r};
+					pixel_memory_w[191] = din_r;
 				end
 			endcase
         end
