@@ -508,32 +508,7 @@ always @(*) begin
 						row_w = row_r;
 					end
 				end
-				1: begin//32x32
-					case(ipf_type_r)
-						0:begin//OFF
-						
-						end
-						1:begin//PO
-						
-						end
-						2:begin//WO
-						
-						end
-					endcase
-				end
-				2: begin//64x64
-					case(ipf_type_r)
-						0:begin//OFF
-						
-						end
-						1:begin//PO
-						
-						end
-						2:begin//WO
-						
-						end
-					endcase
-				end
+				
 
 			endcase
         end
