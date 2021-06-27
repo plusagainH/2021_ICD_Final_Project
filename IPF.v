@@ -105,10 +105,10 @@ always @(*) begin
 			dout_addr_w = {7'b0,row_r}<<7+{7'b0,col_r}+{11'b0,lcu_x_r}<<11+{11'b0,lcu_y_r}<<4; //use shift opetator to reduce hardware usage
 			//dout calculation
 			case(ipf_type_r)
-				0:begin//OFF
+				2'd0:begin//OFF
 					dout = pixel_memory_r[mem_pos_r];
 				end
-				1:begin//PO
+				2'd1:begin//PO
 						
 					//Need to consider ipf_band_pos=0 and ipf_band_pos=31
 					if((ipf_band_pos_r==5'd0 && pixel_memory_r[mem_pos_r]<16) || (ipf_band_pos_r==5'd31 && pixel_memory_r[mem_pos_r]>= 112))//ipf_band_pos=0 or31
@@ -117,10 +117,10 @@ always @(*) begin
 					else if (pixel_memory_r[mem_pos_r]>>3 >= ipf_band_pos_r-1 && pixel_memory_r[mem_pos_r]>>3 <= ipf_band_pos_r+1)//in the band
 						dout = pixel_memory_r[mem_pos_r];
 					
-					else //PO operation
-						case((pixel_memory_r[mem_pos_r]>>3)[1:0])
+					else begin//PO operation
+						case(pixel_memory_r[mem_pos_r][4:3])
 							2'b00:begin
-								if((ipf_offset_r[15]==1'b1)&&(pixel_memory_r[mem_pos_r]<~(ipf_offset_r[15:12]-4'd1)))
+								if((ipf_offset_r[15]==1'b1)&&(pixel_memory_r[mem_pos_r]<(~(ipf_offset_r[15:12]-4'd1))))
 									dout_w = 8'd0;
 								else if((ipf_offset_r[15]==1'b0)&&(pixel_memory_r[mem_pos_r]>8'd255-ipf_offset_r[15:12]))
 									dout_w = 8'd255;
@@ -153,27 +153,27 @@ always @(*) begin
 									dout_w = (pixel_memory_r[mem_pos_r]+ipf_offset_r[3:0]);
 							end
 						endcase	
+					end
+				end
 					
 					
-					
-					
-				2:begin//WO
+				2'd2:begin//WO
 					case(ipf_wo_class_r)//2 classes of filter
 						0:begin //horizontal
-							if(col_r==6'd0 or col_r==(7'd16<<lcu_size_r-7'd1))begin //right-most and left-most column
+							if(col_r==6'd0 || col_r==(7'd16<<lcu_size_r-7'd1))begin //right-most and left-most column
 								dout_w = pixel_memory_r[mem_pos_r];
 							end
 							else begin
 								//five categories
 								//category 0
-								if((pixel_memory_r[mem_pos_r]<pixel_memory_r[mem_pos_r-1]) and (pixel_memory_r[mem_pos_r]<pixel_memory_r[mem_pos_r+1])) begin
+								if((pixel_memory_r[mem_pos_r]<pixel_memory_r[mem_pos_r-1]) && (pixel_memory_r[mem_pos_r]<pixel_memory_r[mem_pos_r+1])) begin
 									if(pixel_memory_r[mem_pos_r]>(8'd255-ipf_offset[15:12]))
 										dout_w = 8'd255;
 									else
 										dout_w = pixel_memory_r[mem_pos_r]+ipf_offset[15:12];
 								end
 								//category 3
-								else if((pixel_memory_r[mem_pos_r]>pixel_memory_r[mem_pos_r-1]) and (pixel_memory_r[mem_pos_r]>pixel_memory_r[mem_pos_r+1])) begin
+								else if((pixel_memory_r[mem_pos_r]>pixel_memory_r[mem_pos_r-1]) && (pixel_memory_r[mem_pos_r]>pixel_memory_r[mem_pos_r+1])) begin
 									if(pixel_memory_r[mem_pos_r]<(~(ipf_offset_r[3:0]-4'd1)))
 										dout_w = 8'd0;
 									else
@@ -197,24 +197,23 @@ always @(*) begin
 								else 
 									dout_w = pixel_memory_r[mem_pos_r];
 
-								end
 							end
 						end
 						1:begin //vertical
-							if(row_r==6'd0 or row_r==(7'd16<<lcu_size_r-7'd1))begin //up-most and down-most row
+							if(row_r==6'd0 || row_r==(7'd16<<lcu_size_r-7'd1))begin //up-most and down-most row
 								dout_w = pixel_memory_r[mem_pos_r];
 							end
 							else begin
 								//five categories
 								//category 0
-								if((pixel_memory_r[mem_pos_r]<pixel_memory_r[mem_pos_r-(8'd16<<lcu_size_r)]) and (pixel_memory_r[mem_pos_r]<pixel_memory_r[mem_pos_r+(8'd16<<lcu_size_r)])) begin
+								if((pixel_memory_r[mem_pos_r]<pixel_memory_r[mem_pos_r-(8'd16<<lcu_size_r)]) && (pixel_memory_r[mem_pos_r]<pixel_memory_r[mem_pos_r+(8'd16<<lcu_size_r)])) begin
 									if(pixel_memory_r[mem_pos_r]>(8'd255-ipf_offset[15:12]))
 										dout_w = 8'd255;
 									else
 										dout_w = pixel_memory_r[mem_pos_r]+ipf_offset[15:12];
 								end
 								//category 3
-								else if((pixel_memory_r[mem_pos_r]>pixel_memory_r[mem_pos_r-(8'd16<<lcu_size_r)]) and (pixel_memory_r[mem_pos_r]>pixel_memory_r[mem_pos_r+(8'd16<<lcu_size_r)])) begin
+								else if((pixel_memory_r[mem_pos_r]>pixel_memory_r[mem_pos_r-(8'd16<<lcu_size_r)]) && (pixel_memory_r[mem_pos_r]>pixel_memory_r[mem_pos_r+(8'd16<<lcu_size_r)])) begin
 									if(pixel_memory_r[mem_pos_r]<(~(ipf_offset_r[3:0]-4'd1)))
 										dout_w = 8'd0;
 									else
@@ -238,7 +237,6 @@ always @(*) begin
 								else 
 									dout_w = pixel_memory_r[mem_pos_r];
 
-								end
 							end
 						end
 							
