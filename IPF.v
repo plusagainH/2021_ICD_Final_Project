@@ -20,7 +20,6 @@ output  [13:0] dout_addr;
 parameter READ = 2'b00 ;
 parameter CAL = 2'b01;
 parameter FINISH = 2'b10;
-reg [7:0] din_r, din_w;
 reg [1:0] ipf_type_r, ipf_type_w;
 reg [4:0] ipf_band_pos_r, ipf_band_pos_w;
 reg ipf_wo_class_r, ipf_wo_class_w;
