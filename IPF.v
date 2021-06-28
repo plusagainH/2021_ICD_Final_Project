@@ -157,18 +157,22 @@ always @(*) begin
 					else begin//PO operation
 						case(pixel_memory_r[mem_pos_r][4:3])
 							2'b00:begin
-								if((ipf_offset_r[15]==1'b1)&&(pixel_memory_r[mem_pos_r]<~(ipf_offset_r[15:12]-4'd1)))
+								if((ipf_offset_r[15]==1'b1)&&(pixel_memory_r[mem_pos_r]<{4'b0,~(ipf_offset_r[15:12]-4'd1)}))
 									dout_w = 8'd0;
 								else if((ipf_offset_r[15]==1'b0)&&(pixel_memory_r[mem_pos_r]>8'd255-ipf_offset_r[15:12]))
 									dout_w = 8'd255;
+								else if(ipf_offset_r[15]==1'b1)
+									dout_w = (pixel_memory_r[mem_pos_r]-{4'b0,~(ipf_offset_r[15:12]-4'd1)});
 								else
 									dout_w = (pixel_memory_r[mem_pos_r]+ipf_offset_r[15:12]);
 							end
 							2'b01:begin
-								if((ipf_offset_r[11]==1'b1)&&(pixel_memory_r[mem_pos_r]<~(ipf_offset_r[11:8]-4'd1)))
+								if((ipf_offset_r[11]==1'b1)&&(pixel_memory_r[mem_pos_r]<{4'b0,~(ipf_offset_r[11:8]-4'd1)}))
 									dout_w = 8'd0;
 								else if((ipf_offset_r[11]==1'b0)&&(pixel_memory_r[mem_pos_r]>8'd255-ipf_offset_r[11:8]))
 									dout_w = 8'd255;
+								else if(ipf_offset_r[11]==1'b1)
+									dout_w = (pixel_memory_r[mem_pos_r]-{4'b0,~(ipf_offset_r[11:8]-4'd1)});
 								else
 									dout_w = (pixel_memory_r[mem_pos_r]+ipf_offset_r[11:8]);
 							end
@@ -177,6 +181,8 @@ always @(*) begin
 									dout_w = 8'd0;
 								else if((ipf_offset_r[7]==1'b0)&&(pixel_memory_r[mem_pos_r]>8'd255-ipf_offset_r[7:4]))
 									dout_w = 8'd255;
+								else if(ipf_offset_r[7]==1'b1)
+									dout_w = (pixel_memory_r[mem_pos_r]-{4'b0,~(ipf_offset_r[7:4]-4'd1)});
 								else
 									dout_w = (pixel_memory_r[mem_pos_r]+ipf_offset_r[7:4]);
 
@@ -186,6 +192,8 @@ always @(*) begin
 									dout_w = 8'd0;
 								else if((ipf_offset_r[3]==1'b0)&&(pixel_memory_r[mem_pos_r]>8'd255-ipf_offset_r[3:0]))
 									dout_w = 8'd255;
+								else if(ipf_offset_r[3]==1'b1)
+									dout_w = (pixel_memory_r[mem_pos_r]-{4'b0,~(ipf_offset_r[3:0]-4'd1)});
 								else
 									dout_w = (pixel_memory_r[mem_pos_r]+ipf_offset_r[3:0]);
 							end
