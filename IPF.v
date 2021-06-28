@@ -91,14 +91,14 @@ always @(*) begin
 				lcu_x_w = lcu_x;
 				lcu_y_w = lcu_y;
 				if(read_row_r==7'd0 || read_row_r==7'd1 || read_row_r==7'd2) begin
-					if(read_row_r==7'd2 && read_col_r==(7'd16<<lcu_size_r-7'd1)) begin
+					if(read_row_r==7'd2 && read_col_r==((7'd16<<lcu_size_r)-7'd1)) begin
 						read_row_w = read_row_r + 7'd1;
 						read_col_w = 7'd0;
 						pixel_memory_w[(7'd16<<lcu_size_r)*read_row_r+read_col_r] = din;
 						busy_w = 1'b1;
 						state_w = CAL;
 					end
-					else if(read_col_r==(7'd16<<lcu_size_r-7'd1))begin
+					else if(read_col_r==((7'd16<<lcu_size_r)-7'd1))begin
 						read_row_w = read_row_r + 7'd1;
 						read_col_w = 7'd0;
 						pixel_memory_w[(7'd16<<lcu_size_r)*read_row_r+read_col_r] = din;
@@ -108,30 +108,30 @@ always @(*) begin
 						pixel_memory_w[(7'd16<<lcu_size_r)*read_row_r+read_col_r] = din;
 					end				
 				end
-				else if(read_row_r==(7'd16<<lcu_size_r-7'd1)) begin  
-					if(read_col_r==(7'd16<<lcu_size_r-7'd1))begin //finish reading a lcu
+				else if(read_row_r==((7'd16<<lcu_size_r)-7'd1)) begin  
+					if(read_col_r==((7'd16<<lcu_size_r)-7'd1))begin //finish reading a lcu
 						read_row_w = 7'd0;
 						read_col_w = 7'd0;
-						pixel_memory_w[7'd32<<lcu_size_r+read_col_r] = din;
+						pixel_memory_w[(7'd32<<lcu_size_r)+read_col_r] = din;
 						state_w = CAL;
 						busy_w = 1'b1;
 					end
 					else begin
 						read_col_w = read_col_r + 7'd1;
-						pixel_memory_w[7'd32<<lcu_size_r+read_col_r] = din;
+						pixel_memory_w[(7'd32<<lcu_size_r)+read_col_r] = din;
 					end
 				end
 				else begin
-					if(read_col_r==(7'd16<<lcu_size_r-7'd1))begin
+					if(read_col_r==((7'd16<<lcu_size_r)-7'd1))begin
 						read_row_w = read_row_r + 7'd1;
 						read_col_w = 7'd0;
-						pixel_memory_w[7'd32<<lcu_size_r+read_col_r] = din;
+						pixel_memory_w[(7'd32<<lcu_size_r)+read_col_r] = din;
 						state_w = CAL;
 						busy_w = 1'b1;
 					end
 					else begin
 						read_col_w = read_col_r + 7'd1;
-						pixel_memory_w[7'd32<<lcu_size_r+read_col_r] = din;
+						pixel_memory_w[(7'd32<<lcu_size_r)+read_col_r] = din;
 					end
 				end
 			end
@@ -197,7 +197,7 @@ always @(*) begin
 				2'd2:begin//WO
 					case(ipf_wo_class_r)//2 classes of filter
 						0:begin //horizontal
-							if(col_r==6'd0 || col_r==(7'd16<<lcu_size_r-7'd1))begin //right-most and left-most column
+							if(col_r==6'd0 || col_r==((7'd16<<lcu_size_r)-7'd1))begin //right-most and left-most column
 								dout_w = pixel_memory_r[mem_pos_r];
 							end
 							else begin
@@ -238,7 +238,7 @@ always @(*) begin
 							end
 						end
 						1:begin //vertical
-							if(row_r==6'd0 || row_r==(7'd16<<lcu_size_r-7'd1))begin //up-most and down-most row
+							if(row_r==6'd0 || row_r==((7'd16<<lcu_size_r)-7'd1))begin //up-most and down-most row
 								dout_w = pixel_memory_r[mem_pos_r];
 							end
 							else begin
@@ -284,13 +284,13 @@ always @(*) begin
 			endcase
 
 			//Update  row, col  and memory location. Determine next state.
-			if(col_r==(7'd16<<lcu_size_r-7'd1))begin //right-most column in LCU
+			if(col_r==((7'd16<<lcu_size_r)-7'd1))begin //right-most column in LCU
 				col_w = 7'd0;
-				if(row_r==7'd0 || row_r==(7'd16<<lcu_size_r-7'd2)) begin //0 or 14,30,62 row in LCU
+				if(row_r==7'd0 || row_r==((7'd16<<lcu_size_r)-7'd2)) begin //0 or 14,30,62 row in LCU
 					row_w = row_r + 7'd1;
 					mem_pos_w = mem_pos_r + 8'd1; //ouput 1,2 column and output 15,16 column
 				end
-				else if(row_r==(7'd16<<lcu_size_r-7'd1)) begin //The down-most row in LCU.
+				else if(row_r==((7'd16<<lcu_size_r)-7'd1)) begin //The down-most row in LCU.
 					row_w = 7'd0;
 					mem_pos_w = 8'd0;
 					if(lcu_x_r==(3'd7>>lcu_size_r) && lcu_y_r==(3'd7>>lcu_size_r)) begin //Finish condition. (3'd7>>lcu_size_r) means 7,3,1 depends on lcu_size_r
@@ -308,11 +308,11 @@ always @(*) begin
 				end
 				else begin
 					row_w = row_r + 7'd1;
-					mem_pos_w = mem_pos_r - (8'd16<<lcu_size_r-8'b1); //return to the first element of the second row in memory.
+					mem_pos_w = mem_pos_r - ((8'd16<<lcu_size_r)-8'b1); //return to the first element of the second row in memory.
 					state_w = READ;
 					busy_w = 1'b0;
 					
-					for (i=0; i<=(8'd32<<lcu_size_r-8'd1); i=i+1) begin
+					for (i=0; i<=((8'd32<<lcu_size_r)-8'd1); i=i+1) begin
 						pixel_memory_w[i] = pixel_memory_w[i+(8'd16<<lcu_size_r)];
 					end
 					//pixel_memory_w[0:(8'd32<<lcu_size_r-8'd1)] = pixel_memory_r[(8'd16<<lcu_size_r):((8'd64<<lcu_size_r)-(8'd16<<lcu_size_r)-8'd1)]; //push second and third row of pixel_memory to first and second row of pixel_memory 
