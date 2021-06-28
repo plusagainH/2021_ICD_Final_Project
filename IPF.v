@@ -94,44 +94,44 @@ always @(*) begin
 					if(read_row_r==7'd2 && read_col_r==((7'd16<<lcu_size_r)-7'd1)) begin //if 0,1,2 rows have already been read, start CAL
 						read_row_w = read_row_r + 7'd1;
 						read_col_w = 7'd0;
-						pixel_memory_w[(7'd16<<lcu_size_r)*read_row_r+read_col_r] = din;
+						pixel_memory_w[(8'd16<<lcu_size_r)*read_row_r+read_col_r] = din;
 						busy_w = 1'b1;
 						state_w = CAL;
 					end
 					else if(read_col_r==((7'd16<<lcu_size_r)-7'd1))begin
 						read_row_w = read_row_r + 7'd1;
 						read_col_w = 7'd0;
-						pixel_memory_w[(7'd16<<lcu_size_r)*read_row_r+read_col_r] = din;
+						pixel_memory_w[(8'd16<<lcu_size_r)*read_row_r+read_col_r] = din;
 					end
 					else begin
 						read_col_w = read_col_r + 7'd1;
-						pixel_memory_w[(7'd16<<lcu_size_r)*read_row_r+read_col_r] = din;
+						pixel_memory_w[(8'd16<<lcu_size_r)*read_row_r+read_col_r] = din;
 					end				
 				end
 				else if(read_row_r==((7'd16<<lcu_size_r)-7'd1)) begin  //read the down-most row in lcu
 					if(read_col_r==((7'd16<<lcu_size_r)-7'd1))begin //finish reading a lcu
 						read_row_w = 7'd0;
 						read_col_w = 7'd0;
-						pixel_memory_w[(7'd32<<lcu_size_r)+read_col_r] = din;
+						pixel_memory_w[(8'd32<<lcu_size_r)+read_col_r] = din;
 						state_w = CAL;
 						busy_w = 1'b1;
 					end
 					else begin
 						read_col_w = read_col_r + 7'd1;
-						pixel_memory_w[(7'd32<<lcu_size_r)+read_col_r] = din;
+						pixel_memory_w[(8'd32<<lcu_size_r)+read_col_r] = din;
 					end
 				end
 				else begin //read one row at a time
 					if(read_col_r==((7'd16<<lcu_size_r)-7'd1))begin
 						read_row_w = read_row_r + 7'd1;
 						read_col_w = 7'd0;
-						pixel_memory_w[(7'd32<<lcu_size_r)+read_col_r] = din;
+						pixel_memory_w[(8'd32<<lcu_size_r)+read_col_r] = din;
 						state_w = CAL;
 						busy_w = 1'b1;
 					end
 					else begin
 						read_col_w = read_col_r + 7'd1;
-						pixel_memory_w[(7'd32<<lcu_size_r)+read_col_r] = din;
+						pixel_memory_w[(8'd32<<lcu_size_r)+read_col_r] = din;
 					end
 				end
 			end
