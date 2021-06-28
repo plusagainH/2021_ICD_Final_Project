@@ -139,7 +139,7 @@ always @(*) begin
         CAL: begin
 			out_en_w = 1'b1;
 			//dout_addr calculation
-			dout_addr_w = ({7'b0,row_r}<<7)+({7'b0,col_r})+({11'b0,lcu_x_r}<<11)+({11'b0,lcu_y_r}<<4); //use shift opetator to reduce hardware usage
+			dout_addr_w = ({7'b0,row_r}<<7)+({7'b0,col_r})+({7'b0,lcu_x_r,4'b0}<<(lcu_size_r))+({lcu_y_r,11'b0}<<(lcu_size_r)); //use shift opetator to reduce hardware usage
 			//dout calculation
 			case(ipf_type_r)
 				2'd0:begin//OFF
