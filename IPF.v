@@ -319,11 +319,24 @@ always @(*) begin
 					mem_pos_w = mem_pos_r - ((8'd16<<lcu_size_r)-8'b1); //return to the first element of the second row in memory.
 					state_w = READ;
 					busy_w = 1'b0;
+					case(lcu_size_r)
+						2'd0:begin
+							for (i=0; i<=31; i=i+1) begin
+								pixel_memory_w[i] = pixel_memory_r[i+(8'd16<<lcu_size_r)];
+							end
+						end
+						2'd1:begin
+							for (i=0; i<=63; i=i+1) begin
+								pixel_memory_w[i] = pixel_memory_r[i+(8'd16<<lcu_size_r)];
+							end
+						end
+						2'd2:begin
+							for (i=0; i<=127; i=i+1) begin
+								pixel_memory_w[i] = pixel_memory_r[i+(8'd16<<lcu_size_r)];
+							end
+						end
+					endcase
 					
-					for (i=0; i<=((8'd32<<lcu_size_r)-8'd1); i=i+1) begin
-						pixel_memory_w[i] = pixel_memory_w[i+(8'd16<<lcu_size_r)];
-					end
-					//pixel_memory_w[0:(8'd32<<lcu_size_r-8'd1)] = pixel_memory_r[(8'd16<<lcu_size_r):((8'd64<<lcu_size_r)-(8'd16<<lcu_size_r)-8'd1)]; //push second and third row of pixel_memory to first and second row of pixel_memory 
 				end
 			end
 			else begin
