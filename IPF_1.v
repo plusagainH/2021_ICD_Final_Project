@@ -41,6 +41,7 @@ reg [6:0] col_r, col_w;//present cal pixel coordinate, change to 7 bits for calc
 reg [6:0] read_row_r, read_row_w; //present read-in pixel coordinate
 reg [6:0] read_col_r, read_col_w; //present read-in pixel coordinate
 reg [7:0] mem_pos_r, mem_pos_w;//present location of pixel in memory
+reg [7:0] cur_mem_r;//pixel_memory[mem_pos] reduce circuit complexity.
 integer i; //for loop below
 
 //Outputs
@@ -229,82 +230,82 @@ always @(*) begin
             case(ipf_wo_class_r)//2 classes of filter
                 0:begin //horizontal
                     if(col_r==6'd0 || col_r==((7'd16<<lcu_size_r)-7'd1))begin //right-most and left-most column
-                        dout_w = pixel_memory_r[mem_pos_r];
+                        dout_w = cur_mem_r;
                     end
                     else begin
                         //five categories
                         //category 0
-                        if((pixel_memory_r[mem_pos_r]<pixel_memory_r[mem_pos_r-1]) && (pixel_memory_r[mem_pos_r]<pixel_memory_r[mem_pos_r+1])) begin
-                            if(pixel_memory_r[mem_pos_r]>(8'd255-ipf_offset_r[15:12]))
+                        if((cur_mem_r<pixel_memory_r[mem_pos_r-1]) && (cur_mem_r<pixel_memory_r[mem_pos_r+1])) begin
+                            if(cur_mem_r>(8'd255-ipf_offset_r[15:12]))
                                 dout_w = 8'd255;
                             else
-                                dout_w = pixel_memory_r[mem_pos_r]+ipf_offset_r[15:12];
+                                dout_w = cur_mem_r+ipf_offset_r[15:12];
                         end
                         //category 3
-                        else if((pixel_memory_r[mem_pos_r]>pixel_memory_r[mem_pos_r-1]) && (pixel_memory_r[mem_pos_r]>pixel_memory_r[mem_pos_r+1])) begin
-                            if(pixel_memory_r[mem_pos_r]<{4'b0,~(ipf_offset_r[3:0]-4'd1)})
+                        else if((cur_mem_r>pixel_memory_r[mem_pos_r-1]) && (cur_mem_r>pixel_memory_r[mem_pos_r+1])) begin
+                            if(cur_mem_r<{4'b0,~(ipf_offset_r[3:0]-4'd1)})
                                 dout_w = 8'd0;
                             else
-                                dout_w = pixel_memory_r[mem_pos_r]-{4'b0,~(ipf_offset_r[3:0]-4'd1)};
+                                dout_w = cur_mem_r-{4'b0,~(ipf_offset_r[3:0]-4'd1)};
                         end
                         //category 1
-                        else if(2*pixel_memory_r[mem_pos_r]<pixel_memory_r[mem_pos_r-1]+pixel_memory_r[mem_pos_r+1]) begin
-                            if(pixel_memory_r[mem_pos_r]>(8'd255-ipf_offset_r[11:8]))
+                        else if(2*cur_mem_r<pixel_memory_r[mem_pos_r-1]+pixel_memory_r[mem_pos_r+1]) begin
+                            if(cur_mem_r>(8'd255-ipf_offset_r[11:8]))
                                 dout_w = 8'd255;
                             else
-                                dout_w = pixel_memory_r[mem_pos_r]+ipf_offset_r[11:8];
+                                dout_w = cur_mem_r+ipf_offset_r[11:8];
                         end
                         //category 2
-                        else if(2*pixel_memory_r[mem_pos_r]>pixel_memory_r[mem_pos_r-1]+pixel_memory_r[mem_pos_r+1]) begin
-                            if(pixel_memory_r[mem_pos_r]<{4'b0,~(ipf_offset_r[7:4]-4'd1)})
+                        else if(2*cur_mem_r>pixel_memory_r[mem_pos_r-1]+pixel_memory_r[mem_pos_r+1]) begin
+                            if(cur_mem_r<{4'b0,~(ipf_offset_r[7:4]-4'd1)})
                                 dout_w = 8'd0;
                             else
-                                dout_w = pixel_memory_r[mem_pos_r]-{4'b0,~(ipf_offset_r[7:4]-4'd1)};
+                                dout_w = cur_mem_r-{4'b0,~(ipf_offset_r[7:4]-4'd1)};
                         end
                         //category 4
                         else begin
-                            dout_w = pixel_memory_r[mem_pos_r];
+                            dout_w = cur_mem_r;
 
                         end
                     end
                 end
                 1:begin //vertical
                     if(row_r==6'd0 || row_r==((7'd16<<lcu_size_r)-7'd1))begin //up-most and down-most row
-                        dout_w = pixel_memory_r[mem_pos_r];
+                        dout_w = cur_mem_r;
                     end
                     else begin
                         //five categories
                         //category 0
-                        if((pixel_memory_r[mem_pos_r]<pixel_memory_r[mem_pos_r-(8'd16<<lcu_size_r)]) && (pixel_memory_r[mem_pos_r]<pixel_memory_r[mem_pos_r+(8'd16<<lcu_size_r)])) begin
-                            if(pixel_memory_r[mem_pos_r]>(8'd255-ipf_offset_r[15:12]))
+                        if((cur_mem_r<pixel_memory_r[mem_pos_r-(8'd16<<lcu_size_r)]) && (cur_mem_r<pixel_memory_r[mem_pos_r+(8'd16<<lcu_size_r)])) begin
+                            if(cur_mem_r>(8'd255-ipf_offset_r[15:12]))
                                 dout_w = 8'd255;
                             else
-                                dout_w = pixel_memory_r[mem_pos_r]+ipf_offset_r[15:12];
+                                dout_w = cur_mem_r+ipf_offset_r[15:12];
                         end
                         //category 3
-                        else if((pixel_memory_r[mem_pos_r]>pixel_memory_r[mem_pos_r-(8'd16<<lcu_size_r)]) && (pixel_memory_r[mem_pos_r]>pixel_memory_r[mem_pos_r+(8'd16<<lcu_size_r)])) begin
-                            if(pixel_memory_r[mem_pos_r]<{4'b0,~(ipf_offset_r[3:0]-4'd1)})
+                        else if((cur_mem_r>pixel_memory_r[mem_pos_r-(8'd16<<lcu_size_r)]) && (cur_mem_r>pixel_memory_r[mem_pos_r+(8'd16<<lcu_size_r)])) begin
+                            if(cur_mem_r<{4'b0,~(ipf_offset_r[3:0]-4'd1)})
                                 dout_w = 8'd0;
                             else
-                                dout_w = pixel_memory_r[mem_pos_r]-{4'b0,~(ipf_offset_r[3:0]-4'd1)};
+                                dout_w = cur_mem_r-{4'b0,~(ipf_offset_r[3:0]-4'd1)};
                         end
                         //category 1
-                        else if(2*pixel_memory_r[mem_pos_r]<pixel_memory_r[mem_pos_r-(8'd16<<lcu_size_r)]+pixel_memory_r[mem_pos_r+(8'd16<<lcu_size_r)]) begin
-                            if(pixel_memory_r[mem_pos_r]>(8'd255-ipf_offset_r[11:8]))
+                        else if(2*cur_mem_r<pixel_memory_r[mem_pos_r-(8'd16<<lcu_size_r)]+pixel_memory_r[mem_pos_r+(8'd16<<lcu_size_r)]) begin
+                            if(cur_mem_r>(8'd255-ipf_offset_r[11:8]))
                                 dout_w = 8'd255;
                             else
-                                dout_w = pixel_memory_r[mem_pos_r]+ipf_offset_r[11:8];
+                                dout_w = cur_mem_r+ipf_offset_r[11:8];
                         end
                         //category 2
-                        else if(2*pixel_memory_r[mem_pos_r]>pixel_memory_r[mem_pos_r-(8'd16<<lcu_size_r)]+pixel_memory_r[mem_pos_r+(8'd16<<lcu_size_r)]) begin
-                            if(pixel_memory_r[mem_pos_r]<{4'b0,~(ipf_offset_r[7:4]-4'd1)})
+                        else if(2*cur_mem_r>pixel_memory_r[mem_pos_r-(8'd16<<lcu_size_r)]+pixel_memory_r[mem_pos_r+(8'd16<<lcu_size_r)]) begin
+                            if(cur_mem_r<{4'b0,~(ipf_offset_r[7:4]-4'd1)})
                                 dout_w = 8'd0;
                             else
-                                dout_w = pixel_memory_r[mem_pos_r]-{4'b0,~(ipf_offset_r[7:4]-4'd1)};
+                                dout_w = cur_mem_r-{4'b0,~(ipf_offset_r[7:4]-4'd1)};
                         end
                         //category 4
                         else 
-                            dout_w = pixel_memory_r[mem_pos_r];
+                            dout_w = cur_mem_r;
 
                     end
                 end        
@@ -338,9 +339,8 @@ always @(*) begin
 					mem_pos_w = mem_pos_r - ((8'd16<<lcu_size_r)-8'b1); //return to the first element of the second row in memory.
 					state_w = READ;
 					busy_w = 1'b0;
-					
-					for (i=0; i<=((8'd32<<lcu_size_r)-8'd1); i=i+1) begin
-						pixel_memory_w[i] = pixel_memory_w[i+(8'd16<<lcu_size_r)];
+                    for (i=0; i<=$signed((8'd32<<lcu_size_r)-8'd1); i=i+1) begin
+						pixel_memory_w[i] = pixel_memory_w[i+$signed(8'd16<<lcu_size_r)];
 					end
 					 
 				end
@@ -382,6 +382,7 @@ always @(posedge clk or posedge reset) begin
 		read_row_r <= 7'b0;
 		read_col_r <= 7'b0;
 		mem_pos_r <= 8'b0;
+        cur_mem_r <= pixel_memory_w[0];
     end
     else begin
         ipf_type_r <= ipf_type_w;
@@ -405,6 +406,7 @@ always @(posedge clk or posedge reset) begin
 		read_row_r <= read_row_w;
 		read_col_r <= read_col_w;
 		mem_pos_r <= mem_pos_w;
+        cur_mem_r <= pixel_memory_w[mem_pos_w];
     end
 end
      
