@@ -340,7 +340,7 @@ always @(*) begin
 					state_w = READ;
 					busy_w = 1'b0;
                     for (i=0; i<=$signed((8'd32<<lcu_size_r)-8'd1); i=i+1) begin
-						pixel_memory_w[i] = pixel_memory_w[i+$signed(8'd16<<lcu_size_r)];
+						pixel_memory_w[i] = pixel_memory_r[i+$signed(8'd16<<lcu_size_r)];
 					end
 					 
 				end
